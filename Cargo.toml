@@ -1,0 +1,10 @@
+[package]
+name = "vad_processor"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib"]  # <--- Critical: Compiles to C-compatible Dynamic Library (for WASM)
+
+[dependencies]
+wasm-bindgen = "0.2"     # <--- The magic bridge between Rust and JS

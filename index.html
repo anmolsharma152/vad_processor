@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Rust VAD - Live Mic</title>
+    <style>
+        body { background: #0f172a; color: white; font-family: sans-serif; text-align: center; padding: 50px; }
+        .status-box { padding: 20px; font-size: 24px; border-radius: 10px; margin-top: 20px; transition: all 0.1s; }
+        .speaking { background: #22c55e; color: black; box-shadow: 0 0 20px #22c55e; }
+        .silent { background: #334155; color: #94a3b8; }
+        button { padding: 15px 30px; font-size: 18px; cursor: pointer; background: #38bdf8; border: none; border-radius: 5px; }
+    </style>
+</head>
+<body>
+    <h1>🎤 Real-Time Rust VAD</h1>
+    <button id="startBtn">Start Microphone</button>
+    
+    <div id="indicator" class="status-box silent">🤫 Silence</div>
+
+    <script type="module">
+        import init, { VadEngine } from './pkg/vad_processor.js';
+
+        let audioContext;
+        let vadEngine;
+
+        async function startApp() {
+            // 1. Initialize WASM
+            await init();
+            console.log("✅ WASM Loaded");
+            
+            // 2. Create our Rust Engine instance
+            // Threshold 0.02 is a good starting point for generic mics
+            vadEngine = new VadEngine(0.02); 
+
+            // 3. Get Microphone Access
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                audioContext = new AudioContext();
+                const source = audioContext.createMediaStreamSource(stream);
+                
+                // 4. Create a Processor (The bridge between JS and Rust)
+                // Buffer size 2048 gives us ~40ms chunks (Low Latency!)
+                const processor = audioContext.createScriptProcessor(2048, 1, 1);
+                
+                source.connect(processor);
+                processor.connect(audioContext.destination);
+
+                processor.onaudioprocess = (e) => {
+                    const inputData = e.inputBuffer.getChannelData(0);
+                    
+                    // 🦀 CALL RUST HERE!
+                    const isSpeaking = vadEngine.process(inputData);
+
+                    // Update UI
+                    const indicator = document.getElementById('indicator');
+                    if (isSpeaking) {
+                        indicator.innerText = "🗣️ SPEECH DETECTED";
+                        indicator.className = "status-box speaking";
+                    } else {
+                        indicator.innerText = "🤫 Silence";
+                        indicator.className = "status-box silent";
+                    }
+                };
+
+                document.getElementById('startBtn').innerText = "Running...";
+                document.getElementById('startBtn').disabled = true;
+
+            } catch (err) {
+                console.error("Mic Error:", err);
+                alert("Could not access microphone.");
+            }
+        }
+
+        document.getElementById('startBtn').addEventListener('click', () => {
+            // AudioContext must be resumed on user gesture
+            startApp();
+        });
+    </script>
+</body>
+</html>
