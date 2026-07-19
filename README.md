@@ -1,5 +1,14 @@
 # 🎙️ VAD Processor (Client-Side WebAssembly)
 
+
+## Docs
+
+| Doc | Purpose |
+|-----|---------|
+| **[docs/STATUS.md](./docs/STATUS.md)** | Handoff status |
+| [docs/setup.md](./docs/setup.md) | Setup |
+| [AGENTS.md](./AGENTS.md) | Agent guidance |
+
 A real-time, client-side Voice Activity Detection (VAD) module compiled to WebAssembly (WASM).
 
 This module acts as the audio processing frontline for the Emotion-Aware Voice Assistant. By running an ONNX VAD model directly in the browser via Rust and WebAssembly, it significantly reduces latency and server overhead. It efficiently chunks valid speech _before_ routing it to the Llama 3.3 backend inference engine, ensuring the backend only processes actual human speech rather than dead air or background noise.
